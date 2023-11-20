@@ -1,1 +1,3 @@
 # seq.awk
+
+Experimental implementation
