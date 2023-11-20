@@ -120,6 +120,7 @@ seq() {
       incr = parse_double(incr)
       last = parse_double(last)
 
+      if (incr == 0) abort("invalid Zero increment value: " incr)
       n = int((last - first) / incr)
 
       if (width > 0) {
