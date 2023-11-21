@@ -4,6 +4,11 @@ set -eu
 
 seq() {
   awk '
+    BEGIN {
+      usage = "usage: seq [-w] [-f format] [first [incr]] last"
+      OFMT = CONVFMT = "%.6g"
+    }
+
     function abort(s) {
       print "seq: " s > "/dev/stderr"
       exit 1
@@ -24,7 +29,7 @@ seq() {
       for (i = 1; i <= l; i++) {
         v += (16 ^ -i) * (index(h, substr(a, i, 1)) - 1)
       }
-      return v
+      return v + 0
     }
 
     function strtod(v, i) {
@@ -42,13 +47,16 @@ seq() {
       } else {
         return ""
       }
-      return (v + 0) ""
+      return v
     }
 
     function parse_double(v) {
       if ((r = strtod(v)) != "") return r
       abort("invalid floating point argument: " v)
-      exit 1
+    }
+
+    function tonum(v) {
+      return int(v "")
     }
 
     function check_format(format,  str, count) {
@@ -71,20 +79,22 @@ seq() {
       return v1 > v2 ? v1 : v2
     }
 
+    function normnum(v,  i) {
+      i = index(v, ".")
+      return (i == 1 ? "0" : "") v (i == 0 ? "." : "")
+    }
+
     function gen_width(first, incr, last,  b, a, i) {
       b = 0; a = 0
-      if (index(first += 0, ".") == 0) first = first "."
-      if (index(incrt += 0, ".") == 0) incr = incr "."
-      if (index(last += 0, ".") == 0) last = last "."
-      i = index(first, "."); b = max(b, i - 1); a = max(a, length(first) - i - 1)
-      i = index(incr, ".");  b = max(b, i - 1); a = max(a, length(incr) - i - 1)
+      first = normnum(first); incr = normnum(incr); last = normnum(last)
+      i = index(first, "."); b = max(b, i - 1); a = max(a, length(first) - i)
+      i = index(incr, ".");  b = max(b, i - 1); a = max(a, length(incr) - i)
       i = index(last, ".");  b = max(b, i - 1)
       return "0" (a > 0 ? (b + a + 1) "." a : b ".0")
     }
 
     BEGIN {
-     usage = "usage: seq [-w] [-f format] [first [incr]] last"
-     format = "%g"; width = 0
+      format = "%g"; width = 0
 
       i = 1
       while (i < ARGC && match(argv = ARGV[i], /^-.*/)) {
@@ -121,7 +131,7 @@ seq() {
       last = parse_double(last)
 
       if (incr == 0) abort("invalid Zero increment value: " incr)
-      n = int((last - first) / incr)
+      n = tonum((last /incr) - (first / incr))
 
       if (width > 0) {
         width = gen_width(first, incr, first + incr * n)
